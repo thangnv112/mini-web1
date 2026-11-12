@@ -1,0 +1,79 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id               String            @id @default(uuid())
+  email            String            @unique
+  name             String
+  role             String            // "student" | "teacher"
+  avatarUrl        String?
+  createdAt        DateTime          @default(now())
+  createdExercises Exercise[]
+  attempts         ExerciseAttempt[]
+  chatHistory      AiChatHistory[]
+  progress         StudentProgress[]
+}
+
+model Exercise {
+  id            String            @id @default(uuid())
+  title         String
+  description   String
+  sentence      String
+  correctAnswer String            // JSON string
+  type          String
+  difficulty    String
+  topic         String
+  orderIndex    Int
+  createdById   String
+  createdBy     User              @relation(fields: [createdById], references: [id])
+  createdAt     DateTime          @default(now())
+  attempts      ExerciseAttempt[]
+  chatHistory   AiChatHistory[]
+}
+
+model ExerciseAttempt {
+  id               String          @id @default(uuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id])
+  exerciseId       String
+  exercise         Exercise        @relation(fields: [exerciseId], references: [id])
+  studentAnswer    String          // JSON string
+  attemptNumber    Int
+  isCorrect        Boolean
+  scaffoldingLevel Int
+  starsEarned      Int
+  submittedAt      DateTime        @default(now())
+  chatHistory      AiChatHistory[]
+}
+
+model AiChatHistory {
+  id               String          @id @default(uuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id])
+  exerciseId       String
+  exercise         Exercise        @relation(fields: [exerciseId], references: [id])
+  attemptId        String?
+  attempt          ExerciseAttempt? @relation(fields: [attemptId], references: [id])
+  sender           String          // "student" | "ai"
+  message          String
+  scaffoldingLevel Int
+  createdAt        DateTime        @default(now())
+}
+
+model StudentProgress {
+  id                 String   @id @default(uuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id])
+  topic              String
+  totalExercises     Int
+  completedExercises Int
+  totalStars         Int
+  accuracyRate       Float
+  lastActivity       DateTime @default(now())
+}
